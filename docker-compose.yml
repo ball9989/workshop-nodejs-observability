@@ -1,4 +1,7 @@
 version: '3.8'
+volumes:
+  prometheus_data: {}
+  grafana_data: {}
 services:
   service1:
     build:
@@ -21,15 +24,28 @@ services:
       dockerfile: Dockerfile
     ports:
       - 3002:3002
-  zipkin:
-    image: openzipkin/zipkin
-    ports:
-      - 9411:9411
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+     - '--config.file=/etc/prometheus/prometheus.yml'
     ports:
-      - 9090:9090
+      - '9090:9090'
+    restart: always
   grafana:
     image: grafana/grafana
+    volumes: 
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
     ports:
-      - 9999:9999 
+      - 9999:3000
+  zipkin:
+    image: openzipkin/zipkin:latest
+    ports:
+      - "9411:9411" 
+  
